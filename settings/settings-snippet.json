@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|MultiEdit|Write|NotebookEdit|mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "python3 -I \"$HOME\"/.claude/hooks/team/live_key_guard.py", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          { "type": "command", "command": "python3 -I \"$HOME\"/.claude/hooks/team/format_if_configured.py", "timeout": 40 }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^(feature-builder|test-writer|auth-payments|boilerplate-renamer|frontend-ux)$",
+        "hooks": [
+          { "type": "command", "command": "python3 -I \"$HOME\"/.claude/hooks/team/evidence_gate.py", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 -I \"$HOME\"/.claude/hooks/team/team_loop.py stop", "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 -I \"$HOME\"/.claude/hooks/team/team_loop.py reset", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}
