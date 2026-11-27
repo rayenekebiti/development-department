@@ -112,7 +112,8 @@ done:    STATUS: VERIFIED   -> Verification block: check output, review verdicts
 ```
 
 - **Decisions** (approve the plan, pick an option) come as an inline question. Answering doesn't end
-  the run.
+  the run. At the plan checkpoint the lead shows the plan's goal, a Mermaid diagram of the flow the
+  feature changes, and each step with its owner.
 - **Things only you can do** (sign in with `/mcp`, add an env var, approve a commit or deploy) end the
   turn with `STATUS: NEEDS YOU`, one line per item. Do them, reply, and it picks up where it stopped.
 - **How it keeps going:** `team_loop.py` is a Stop hook that reads the STATUS line at the end of each
@@ -134,10 +135,15 @@ condition holds. It uses the same `STATUS: VERIFIED` line:
 Each role owns one thing. Anything outside it goes to the named teammate.
 
 **1. `feature-planner`: request → approved plan**
-- **Owns:** acceptance criteria; ordered steps (one commit each) with exact files, signatures, test command and owner.
+- **Owns:** acceptance criteria; a Mermaid flow diagram of what changes; ordered steps (one commit each) with exact files, signatures, test command and owner.
 - **Not its job:** writing code; visual design (`frontend-ux`); security sign-off (`security-reviewer`).
 - **Call when:** a new feature, a change across 3+ files, or any design choice. Skip it for a clear 1–2 file fix.
-- **Delivers:** `docs/plans/<date>-<feature>.md`, or questions if the request is ambiguous.
+- **Delivers:** `docs/plans/<date>-<feature>.md`, or questions if the request is ambiguous. The plan's
+  **Flow** section is one diagram (`flowchart`, `sequenceDiagram`, `stateDiagram-v2` or `erDiagram`,
+  at most ~15 nodes) using real function, route and table names, with new parts marked `NEW` and
+  changed ones highlighted. In a project with `.codegraph/`, its edges come from the graph's call
+  paths. GitHub and most editors render it; if `mmdc` (mermaid-cli) is installed, the planner checks
+  that it renders.
 - **Done when:** every path exists or is marked NEW, and every step has an owner and a test.
 
 **2. `frontend-ux`: presentation layer**
@@ -237,7 +243,8 @@ missing ones under "not checked".
 ## Hooks
 
 **From plugins:** `guard-pack` blocks dangerous commands (`rm -rf ~`, `curl | sh`), reads of `.env` and
-keys, force pushes to main, and agent edits to Claude settings, hooks or agent files. `protect-tests`
+keys, agent edits to Claude settings, hooks or agent files, and any commit, push or `gh pr merge` on
+`main`. So agents work on a branch and open a pull request, and **you** merge it. `protect-tests`
 blocks deleting tests or adding skip markers instead of fixing code. `security-guidance` warns about
 risky patterns on edits.
 
