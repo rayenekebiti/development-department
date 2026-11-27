@@ -1,0 +1,27 @@
+{
+  "agent": "codebase-scout",
+  "repo": "fixtures/shop",
+  "note": "Each expected entry is a list of acceptable file:line answers; a task's score is the share of entries found.",
+  "train": [
+    {"id": "discount-callers",
+     "question": "Where is apply_discount defined, and list every place that calls it.",
+     "expected": [["shop/pricing.py:4"], ["shop/orders.py:8"], ["shop/api.py:10"]]},
+    {"id": "tax-env",
+     "question": "Where is the SHOP_TAX_RATE environment variable read, and which function uses that value?",
+     "expected": [["shop/config.py:5"], ["shop/pricing.py:8", "shop/pricing.py:9"]]},
+    {"id": "status-new",
+     "question": "Where does an order get its initial status?",
+     "expected": [["shop/orders.py:9"]]}
+  ],
+  "val": [
+    {"id": "route-orders",
+     "question": "Which function handles POST /orders, and where is that route registered?",
+     "expected": [["shop/api.py:5"], ["shop/api.py:14"]]},
+    {"id": "paid-handlers",
+     "question": "Which functions run when the 'order.paid' event is emitted?",
+     "expected": [["shop/orders.py:15", "shop/orders.py:14"], ["shop/orders.py:20", "shop/orders.py:19"]]},
+    {"id": "emit-callers",
+     "question": "Where is emit defined and who calls it?",
+     "expected": [["shop/events.py:11"], ["shop/orders.py:10"]]}
+  ]
+}
