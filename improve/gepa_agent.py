@@ -47,6 +47,17 @@ def run_claude(args, prompt, cwd, timeout):
 
 
 # ---- constraint gates (hermes style): an invalid candidate scores 0 with the reason as feedback ----
+def never_rules(text):
+    """Every sentence containing "never", with line wrapping and list markers removed."""
+    text = re.sub(r"(?m)^(#+ .*)$", r"\n\1\n", text)  # a heading is its own block
+    rules = []
+    for block in re.split(r"\n\s*\n|\n(?=\s*(?:[-*+]\s|\d+[.)]\s|\|))", text):
+        block = re.sub(r"^\s*(?:[-*+]|\d+[.)]|#+)\s+", "", block)
+        rules += [s for s in re.split(r"(?<=[.!?])\s+", " ".join(block.split()))
+                  if re.search(r"\bnever\b", s, re.I)]
+    return rules
+
+
 def size_limit(baseline):
     return int(max(1.5 * len(baseline), 6000))  # hermes caps skills at a fixed size; we allow 6 KB or 1.5x
 
@@ -59,7 +70,8 @@ def reflection_template(baseline):
         "Write improved instructions that fix the failures in the feedback while keeping what works. "
         "Give general guidance, not answers to these particular tasks. Hard rules, or the new "
         f"instructions are rejected: keep every one of these Markdown section headings: {headings}; stay "
-        f"under {size_limit(baseline)} characters; keep every 'never' rule from the current instructions.\n\n"
+        f"under {size_limit(baseline)} characters; copy every sentence that contains 'never' word for word, "
+        "as a sentence of its own.\n\n"
         "Provide the new instructions within ``` blocks."
     )
 
@@ -74,17 +86,48 @@ def gate(body, baseline):
     for heading in re.findall(r"^## .+$", baseline, re.M):
         if heading not in body:
             problems.append(f"the section heading '{heading}' was removed")
-    if re.search(r"\b(Edit|Write)\b tool", body) and "never" not in body.lower():
-        problems.append("the read-only rule was dropped")
+    kept = {rule.casefold() for rule in never_rules(body)}
+    for rule in never_rules(baseline):
+        if rule.casefold() not in kept:
+            problems.append(f"this rule was dropped or reworded: '{rule}'")
     return problems
 
 
-def score_output(output, expected):
+# a file path with an extension, then ":line"; in a range such as 4-9 only the first line counts
+CITATION = re.compile(r"(?<![\w./-])((?:[\w.-]*/)*[\w-]+\.[A-Za-z]{1,5}):(\d+)")
+
+
+def cites(path, line, location):
+    """True if path:line is `location`, written as a bare, relative or absolute path."""
+    want, want_line = location.rsplit(":", 1)
+    got, want = "/" + path.removeprefix("./"), "/" + want
+    return line == int(want_line) and (got.endswith(want) or want.endswith(got))
+
+
+def score_output(output, expected, allowed=()):
+    """F1 of the cited locations: missing answers and wrong citations both cost points.
+
+    `expected` lists the answers, each with its acceptable locations. `allowed` locations are true
+    supporting context: they earn nothing and cost nothing.
+    """
+    answers = [o for options in expected for o in options]
+    hits, wrong = set(), []
+    for path, number in CITATION.findall(output):
+        line = int(number)
+        match = next((o for o in answers if cites(path, line, o)), None)
+        if match:
+            hits.add(match)
+        elif not any(cites(path, line, o) for o in allowed) and f"{path}:{line}" not in wrong:
+            wrong.append(f"{path}:{line}")
     found, missed = [], []
     for options in expected:
-        hit = next((o for o in options if re.search(re.escape(o.split("shop/", 1)[-1]) + r"(?!\d)", output)), None)
+        hit = next((o for o in options if o in hits), None)
         (found if hit else missed).append(hit or " or ".join(options))
-    return len(found) / len(expected), found, missed
+    if not found:
+        return 0.0, found, missed, wrong
+    recall = len(found) / len(expected)
+    precision = len(hits) / (len(hits) + len(wrong))
+    return 2 * precision * recall / (precision + recall), found, missed, wrong
 
 
 class AgentAdapter:
@@ -99,8 +142,9 @@ class AgentAdapter:
         out = run_claude(["--model", self.model, "--system-prompt", body,
                           "--allowedTools", *READ_TOOLS, "--disallowedTools", "Bash", "Edit", "Write",
                           "NotebookEdit", "WebFetch", "WebSearch", "--"], task["question"], self.repo_dir, self.timeout)
-        s, found, missed = score_output(out, task["expected"])
-        fb = f"Score {s:.2f}. Found: {', '.join(found) or 'none'}. Missed: {', '.join(missed) or 'none'}."
+        s, found, missed, wrong = score_output(out, task["expected"], task.get("allowed", []))
+        fb = (f"Score {s:.2f}. Found: {', '.join(found) or 'none'}. Missed: {', '.join(missed) or 'none'}. "
+              f"Cited but not part of the answer ({len(wrong)}): {', '.join(wrong[:10]) or 'none'}.")
         return out, s, fb
 
     def evaluate(self, batch, candidate, capture_traces=False):
