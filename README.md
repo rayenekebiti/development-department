@@ -279,11 +279,13 @@ MIT. See [LICENSE](LICENSE).
 
 ## Self-improvement (GEPA)
 
-`improve/gepa_agent.py` tunes one agent's prompt with [GEPA](https://github.com/gepa-ai/gepa), scored on sample questions with known `file:line` answers (`improve/tasks/<agent>.json`, run against `improve/fixtures/`). The design follows hermes-agent-self-evolution: questions with known answers → GEPA → checks on each rewrite (size limit, kept headings, kept "never" rules) → a pull request you review. Model calls go through the `claude` CLI. The agent being tested only gets Read, Grep and Glob. Nothing is installed: each run writes `report.json`, `proposal.diff` and, if the prompt scored better, the new agent file to `improve/runs/<agent>-<time>/`.
+`improve/gepa_agent.py` tunes one agent's prompt with [GEPA](https://github.com/gepa-ai/gepa), scored on sample questions with known `file:line` answers (`improve/tasks/<agent>.json`, run against `improve/fixtures/`). The design follows hermes-agent-self-evolution: questions with known answers → GEPA → checks on each rewrite (size limit, kept headings, every sentence containing "never" kept word for word) → a pull request you review. A question's score is the F1 of the `file:line` citations in the answer, so both missed answers and wrong citations lower it. Model calls go through the `claude` CLI. The agent being tested only gets Read, Grep and Glob. Nothing is installed: each run writes `report.json`, `proposal.diff` and, if the prompt scored better, the new agent file to `improve/runs/<agent>-<time>/`.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install gepa
 .venv/bin/python improve/gepa_agent.py codebase-scout --budget 18
+# tests for the scorer and the checks (no model calls)
+python3 -m unittest discover -s improve
 # self-test: start from a deliberately weak prompt
 .venv/bin/python improve/gepa_agent.py codebase-scout --budget 30 --seed-file improve/tasks/selftest-weak-scout.md
 ```

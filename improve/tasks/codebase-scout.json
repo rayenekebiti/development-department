@@ -1,27 +1,33 @@
 {
   "agent": "codebase-scout",
   "repo": "fixtures/shop",
-  "note": "Each expected entry is a list of acceptable file:line answers; a task's score is the share of entries found.",
+  "note": "Each expected entry is a list of acceptable file:line answers; a task's score is the F1 of its citations, so missed answers and wrong citations both cost points. 'allowed' lines are true supporting context that neither earns nor costs.",
   "train": [
     {"id": "discount-callers",
      "question": "Where is apply_discount defined, and list every place that calls it.",
-     "expected": [["shop/pricing.py:4"], ["shop/orders.py:8"], ["shop/api.py:10"]]},
+     "expected": [["shop/pricing.py:4"], ["shop/orders.py:8"], ["shop/api.py:10"]],
+     "allowed": ["shop/orders.py:2", "shop/api.py:2"]},
     {"id": "tax-env",
      "question": "Where is the SHOP_TAX_RATE environment variable read, and which function uses that value?",
-     "expected": [["shop/config.py:5"], ["shop/pricing.py:8", "shop/pricing.py:9"]]},
+     "expected": [["shop/config.py:5"], ["shop/pricing.py:8", "shop/pricing.py:9"]],
+     "allowed": ["shop/config.py:4", "shop/pricing.py:1", "shop/orders.py:9"]},
     {"id": "status-new",
      "question": "Where does an order get its initial status?",
-     "expected": [["shop/orders.py:9"]]}
+     "expected": [["shop/orders.py:9"]],
+     "allowed": ["shop/orders.py:5"]}
   ],
   "val": [
     {"id": "route-orders",
      "question": "Which function handles POST /orders, and where is that route registered?",
-     "expected": [["shop/api.py:5"], ["shop/api.py:14"]]},
+     "expected": [["shop/api.py:5"], ["shop/api.py:14"]],
+     "allowed": ["shop/api.py:6", "shop/api.py:13", "shop/api.py:19", "shop/api.py:20", "shop/orders.py:5"]},
     {"id": "paid-handlers",
      "question": "Which functions run when the 'order.paid' event is emitted?",
-     "expected": [["shop/orders.py:15", "shop/orders.py:14"], ["shop/orders.py:20", "shop/orders.py:19"]]},
+     "expected": [["shop/orders.py:15", "shop/orders.py:14"], ["shop/orders.py:20", "shop/orders.py:19"]],
+     "allowed": ["shop/events.py:4", "shop/events.py:6", "shop/events.py:11", "shop/events.py:12", "shop/events.py:13"]},
     {"id": "emit-callers",
      "question": "Where is emit defined and who calls it?",
-     "expected": [["shop/events.py:11"], ["shop/orders.py:10"]]}
+     "expected": [["shop/events.py:11"], ["shop/orders.py:10"]],
+     "allowed": ["shop/orders.py:1", "shop/orders.py:5", "shop/events.py:12", "shop/events.py:13"]}
   ]
 }
