@@ -49,6 +49,33 @@ Then:
 - Optional: install the free scanners `security-reviewer` uses when they are present: OSV-Scanner,
   Gitleaks, Trivy, Bandit, gosec, eslint-plugin-security.
 
+### Optional: code graph (CodeGraph)
+
+[CodeGraph](https://github.com/colbymchenry/codegraph) (MIT) indexes a project into a local graph of
+symbols, calls and dependencies. With it, `codebase-scout`, `feature-planner`, `code-reviewer`,
+`security-reviewer` and `boilerplate-renamer` ask "who calls X" or "how does X reach Y" in one query,
+instead of grepping, and catch callbacks and interface implementations that grep misses. Without a
+`.codegraph/` folder in the project, they search as before.
+
+Install it with its anonymous usage statistics turned off before it ever runs:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/colbymchenry/codegraph/main/install.sh | DO_NOT_TRACK=1 sh
+~/.local/bin/codegraph telemetry off
+DO_NOT_TRACK=1 ~/.local/bin/codegraph install --target=claude --location=global --yes
+```
+
+The last command adds the CodeGraph MCP server to Claude Code, a short CodeGraph section to
+`~/.claude/CLAUDE.md`, an allow rule for its tools, and a prompt hook that attaches graph context to
+your own messages in indexed projects (subagents query the MCP tool themselves).
+`codegraph uninstall` removes all of it. Then, in each project:
+
+```bash
+codegraph init --local-only    # builds .codegraph/ and keeps it out of git
+```
+
+Re-running `./install.sh` also switches CodeGraph telemetry off if CodeGraph is installed.
+
 To use the team in one project only, copy `agents/` into `<project>/.claude/agents/`. A project copy
 overrides the user-level one.
 
@@ -198,6 +225,7 @@ normal session route work on its own, add this to a project's `CLAUDE.md` (or `~
 | auth-payments | `stripe` | official |
 | planner, builders | `context7` (docs MCP) | official |
 | everyone | `guard-pack`, `protect-tests` (safety hooks) | `karanb192/claude-code-hooks` |
+| scout, planner, reviewers, renamer | CodeGraph (code graph MCP, optional) | `colbymchenry/codegraph` |
 
 **Ponytail is set to off by default.** Otherwise the plugin turns its mode on in every session and
 every agent. `feature-builder` still gets it because it preloads the skill. Type `/ponytail` in a

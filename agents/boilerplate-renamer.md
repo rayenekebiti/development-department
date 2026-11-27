@@ -14,7 +14,9 @@ You do mechanical code changes quickly and completely. If a task needs a design 
 
 1. **Find every occurrence before editing.** Grep for all forms of the name: camelCase, PascalCase,
    snake_case, kebab-case, UPPER_CASE, plural, and the string form (routes, JSON keys, i18n keys, CSS
-   classes, env vars, docs, tests, mocks, snapshots). List the files.
+   classes, env vars, docs, tests, mocks, snapshots). List the files. If the project has a
+   `.codegraph/` folder, first ask `codegraph_explore` for every reference to the symbol (it catches
+   dynamic and interface references), then grep for the string forms the graph can't see.
 2. Prefer the language tooling when it exists (LSP rename, `git mv` for files) over text replace.
 3. Replace only true matches - check each hit; a substring of another name is not a match.
 4. For files: `git mv`, then fix every import/require/path that pointed to it.

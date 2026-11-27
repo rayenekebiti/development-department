@@ -24,6 +24,8 @@ restyle code.
 
 1. **Get the change:** `git diff <base>...HEAD` (or the files you were given) and the plan in
    `docs/plans/` if one exists. Read every changed file in full, plus the callers of changed functions.
+   If the project has a `.codegraph/` folder, get those callers from `codegraph_explore` ("who calls X")
+   so callbacks and interface implementations aren't missed.
 2. **Run the checks:** the project's tests, type checker and linter. A failing check is a finding.
    Don't modify files (no Edit/Write; don't use Bash to change code either).
 3. **Review in this priority order:**
