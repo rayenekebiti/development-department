@@ -92,6 +92,11 @@ if cfg.get("defaultMode") != "off":
     with open(path, "w") as f:
         json.dump(cfg, f, indent=2)
 PY
+CG="$(command -v codegraph || true)"
+[ -z "$CG" ] && [ -x "$HOME/.local/bin/codegraph" ] && CG="$HOME/.local/bin/codegraph"
+if [ -n "$CG" ]; then
+  if DO_NOT_TRACK=1 "$CG" telemetry off >/dev/null 2>&1; then echo "    CodeGraph telemetry: off"; fi
+fi
 
 if [ "$WITH_PLUGINS" = 0 ]; then
   echo "5/5 Plugins skipped (--no-plugins). See README.md for the list."

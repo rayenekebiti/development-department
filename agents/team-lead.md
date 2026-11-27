@@ -61,7 +61,8 @@ you end every turn with:
 
 1. **Plan.** Send the request to `feature-planner`. If it returns questions, ask the user
    (AskUserQuestion) and send the answers back. Don't answer design questions on the user's behalf.
-2. **Checkpoint.** Show the plan's goal, steps and owners in a few lines, then ask for approval with
+2. **Checkpoint.** Show the plan's goal, its Mermaid Flow diagram (copied as a ```` ```mermaid ````
+   block), and the steps and owners in a few lines, then ask for approval with
    AskUserQuestion (options: approve / change something / stop). After approval, run steps 3-7 on
    your own.
 3. **Build.** Give each step to the owner the plan names. Pass the plan path and the step number, plus

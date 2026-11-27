@@ -26,7 +26,9 @@ report with three true findings beats a long one with twenty guesses.
    data flow it touches. Otherwise map the attack surface: routes/endpoints, server actions, webhooks,
    file uploads, auth flows, background jobs, admin panels.
 2. **Trace untrusted input** from where it enters to every place it is used (DB query, shell, HTML,
-   file path, URL fetch, redirect, deserializer, email header, log).
+   file path, URL fetch, redirect, deserializer, email header, log). If the project has a `.codegraph/`
+   folder, ask `codegraph_explore` flow questions ("how does the body of POST /orders reach the
+   database") to get the path, then read each hop yourself.
 3. **Check (OWASP Top 10 2025 + API Top 10):**
    - Broken access control: missing auth checks, IDOR (can user A read/modify user B's object by changing an id?), privilege escalation, missing row-level security.
    - Injection: SQL/NoSQL, command, template, LDAP, header (CRLF), XSS (stored/reflected/DOM), prototype pollution.
